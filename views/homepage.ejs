@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <%- include('./partials/head') %>
+    <title>blog-it</title>
+</head>
+
+<body>
+<%- include("./partials/navbar") %>
+
+
+  <% if (locals.user) { %>
+    <div class="container">
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+        <% blogs.forEach(blog=> { %>
+          <div class="col">
+            <div class="card m-3 h-100" >
+              <img src="<%= blog.coverImageURL %>" class="card-img-top" style="height: 200px; object-fit: cover;"
+                alt="...">
+              <div class="card-body">
+                <h5 class="card-title">
+                  <%= blog.title.length> 10 ? blog.title.slice(0,10) + "..." : blog.title %>
+                </h5>
+                <p class="card-text">
+                  <%= blog.body.length> 10 ? blog.body.slice(0, 10) + '...' : blog.body %>
+                </p>
+                <a href="/blog/<%= blog._id%>" class="btn btn-primary w-100">view</a>
+              </div>
+            </div>
+          </div>
+          <% }) %>
+      </div>
+    </div>
+
+    <% }else{ %>
+      <div class="d-flex align-items-center justify-content-center min-vh-100">
+        <h1 style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          font-size: 4rem; text-shadow: 0px 0px 0px rgba(0,0,0.4)">
+          blog it.
+        </h1>
+      </div>
+
+
+
+
+      <% } %>
+
+
+
+        <%- include("./partials/script") %>
+</body>
+</html>
