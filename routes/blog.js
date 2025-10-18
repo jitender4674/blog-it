@@ -2,10 +2,9 @@ require('dotenv').config();
 const express = require("express");
 const multer = require("multer");
 const path = require('path');
-const Blog = require("../models/blog")
+const streamifier = require('streamifier');
+const Blog = require("../models/blog");
 const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const dotenv = require("dotenv")
 
 const router = express.Router();
 
@@ -16,59 +15,70 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_SECRET
 });
 
-// cloudinary storage
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: 'uploads',  // Cloudinary folder
-    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+// Multer memory storage (no disk files)
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
-    // 🔥 Custom filename logic
-    public_id: (req, file) => {
-      // Example: userID + timestamp
-      const filename = `${Date.now()}-${file.originalname.split('.')[0]}`;
-      return filename;
+// GET: Add new blog page
+router.get("/add-new", (req, res) => {
+  return res.render("addBlog", {
+    user: req.user,
+  });
+});
+
+// POST: Create blog
+router.post("/", upload.single("coverImage"), async (req, res) => {
+  try {
+    const { title, body } = req.body;
+    let coverImageURL = null;
+
+    // Upload to Cloudinary if a file is provided
+    if (req.file) {
+      const uploadResult = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            folder: 'uploads',
+            public_id: `${Date.now()}-${req.file.originalname.replace(/\s+/g, '-').toLowerCase()}`
+          },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result);
+          }
+        );
+        streamifier.createReadStream(req.file.buffer).pipe(stream);
+      });
+
+      coverImageURL = uploadResult.secure_url;
     }
-  },
-});
 
-const upload = multer({
-    storage:storage
-});
-
-router.get("/add-new", (req,res) =>{
-    return res.render("addBlog", {
-        user: req.user,
-    });
-});
-
-router.post("/", upload.single("coverImage"), async (req,res) =>{
-    // console.log(req.body);
-    // console.log(req.file);
-    const {title,body} = req.body;
+    // Create blog in MongoDB
     const blog = await Blog.create({
-        body,
-        title,
-        createdBy: req.user._id,
-        coverImageURL: req.file.path,
+      title,
+      body,
+      createdBy: req.user._id,
+      coverImageURL
     });
-
 
     return res.redirect("/");
+  } catch (error) {
+    console.error("Error creating blog:", error);
+    res.status(500).send("Error creating blog");
+  }
 });
 
-// 
-router.get("/:id", async(req,res) => {
+// GET: View single blog
+router.get("/:id", async (req, res) => {
+  try {
     const blog = await Blog.findById(req.params.id).populate("createdBy");
 
-
-    return res.render("viewBlog",{
-        user: req.user,
-        blog: blog,
-    })
-})
-
-
-
+    return res.render("viewBlog", {
+      user: req.user,
+      blog
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error fetching blog");
+  }
+});
 
 module.exports = router;
