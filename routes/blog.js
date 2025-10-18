@@ -61,6 +61,7 @@ router.post("/", upload.single("coverImage"), async (req, res) => {
 
     return res.redirect("/");
   } catch (error) {
+    console.log(error)
     console.error("Error creating blog:", error);
     res.status(500).send("Error creating blog");
   }
