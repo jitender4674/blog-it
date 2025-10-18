@@ -1,12 +1,22 @@
+require('dotenv').config();
 const express = require("express");
 const multer = require("multer");
 const path = require('path');
 const Blog = require("../models/blog")
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const dotenv = require("dotenv")
 
 const router = express.Router();
 
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_NAME,
+  api_key: process.env.CLOUDINARY_KEY,
+  api_secret: process.env.CLOUDINARY_SECRET
+});
+
+// cloudinary storage
 const storage = new CloudinaryStorage({
   cloudinary,
   params: {
