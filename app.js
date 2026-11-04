@@ -10,7 +10,7 @@ const Blog = require("./models/blog");
 
 const app = express();
 const PORT = process.env.PORT || 8000;
-mongoose.connect(process.env.MONGO_DB_URL).then(e => console.log("mongoDB connected"));
+mongoose.connect(process.env.MONGO_DB_URL).then(e => console.log("mongoDB connected")).catch(err => console.log(err));
 
 
 // middleware
